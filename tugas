@@ -1,0 +1,57 @@
+logistic_regression <- function(X, y, method = "NR", tol = 1e-6, max_iter = 100) {
+  # Menambahkan intercept ke matriks X
+  X <- cbind(1, X)
+  
+  # Inisialisasi beta (koefisien)
+  beta <- rep(0, ncol(X))
+  
+  # Iterasi
+  for (i in 1:max_iter) {
+    # Hitung probabilitas menggunakan fungsi sigmoid
+    p <- 1 / (1 + exp(-X %*% beta))
+    
+    # Hitung matriks diagonal W
+    W <- diag(as.vector(p * (1 - p)), nrow = length(p))
+    
+    # Hitung turunan pertama (gradient)
+    gradient <- t(X) %*% (y - p)
+    
+    # Hitung turunan kedua (Hessian)
+    Hessian <- -t(X) %*% W %*% X
+    
+    if (method == "NR") {
+      # Newton-Raphson update
+      beta_new <- beta - solve(Hessian) %*% gradient
+    } else if (method == "IRLS") {
+      # IRLS update (sama dengan NR tetapi dengan cara pandang berbeda)
+      beta_new <- beta + solve(Hessian) %*% gradient
+    } else {
+      stop("Method must be 'NR' or 'IRLS'")
+    }
+    
+    # Cek konvergensi
+    if (sum(abs(beta_new - beta)) < tol) {
+      break
+    }
+    
+    beta <- beta_new
+  }
+  
+  # Hitung probabilitas akhir
+  fit <- 1 / (1 + exp(-X %*% beta))
+  
+  return(list(method = method, beta = beta, fit = fit))
+}
+
+# Contoh penggunaan
+set.seed(123)
+X <- matrix(rnorm(100), ncol = 2)  # 2 variabel prediktor
+y <- rbinom(50, 1, 0.5)            # Label biner
+
+# Gunakan metode Newton-Raphson
+result_NR <- logistic_regression(X, y, method = "NR")
+print(result_NR)
+
+# Gunakan metode IRLS
+result_IRLS <- logistic_regression(X, y, method = "IRLS")
+print(result_IRLS)
